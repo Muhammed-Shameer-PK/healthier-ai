@@ -11,11 +11,87 @@ CORE FEATURES TO IMPLEMENT:
 UI STYLE: Soft pastel theme (#FFF5F5, #FFB6C1), minimalist, accessible for rural users.
 */
 
-import { Stack } from 'expo-router';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { LanguageProvider } from '../src/context/LanguageContext';
+import { startAutoSync, stopAutoSync } from '../src/services/syncService';
+import { getRole } from '../src/services/storageService';
+import { ROLES } from '../src/utils/constants';
 
 export default function RootLayout() {
+  const [isReady, setIsReady] = useState(false);
+  const [userRole, setUserRole] = useState(undefined); // undefined = not yet checked
+  const router = useRouter();
+  const segments = useSegments();
+
+  // Check role on mount and whenever segments change
+  // Using a ref to debounce rapid segment changes
+  const checkingRef = React.useRef(false);
+
+  const refreshRole = React.useCallback(async () => {
+    if (checkingRef.current) return;
+    checkingRef.current = true;
+    try {
+      const role = await getRole();
+      setUserRole(role || null);
+    } catch (e) {
+      console.error('[Layout] Error checking role:', e);
+      setUserRole(null);
+    } finally {
+      checkingRef.current = false;
+      if (!isReady) setIsReady(true);
+    }
+  }, [isReady]);
+
+  // Initial load
+  useEffect(() => {
+    refreshRole();
+  }, []);
+
+  // Re-check role on navigation (handles post-onboarding)
+  useEffect(() => {
+    if (isReady) refreshRole();
+  }, [segments]);
+
+  // Route guard: redirect based on role
+  useEffect(() => {
+    // Wait until role has been checked at least once
+    if (!isReady || userRole === undefined) return;
+
+    const currentScreen = segments[0];
+
+    if (!userRole) {
+      // No role set → send to role selection (unless already there or onboarding)
+      const allowedWithoutRole = ['role-select', 'profile-setup'];
+      if (!allowedWithoutRole.includes(currentScreen)) {
+        router.replace('/role-select');
+      }
+    } else if (userRole === ROLES.ASHA) {
+      // ASHA worker should always be on /asha
+      if (currentScreen !== 'asha' && currentScreen !== 'role-select') {
+        router.replace('/asha');
+      }
+    }
+    // Woman role → no forced redirect, any screen is fine
+  }, [isReady, userRole, segments]);
+
+  // Start background sync on app launch
+  useEffect(() => {
+    startAutoSync();
+    return () => stopAutoSync();
+  }, []);
+
+  // Show splash loader while checking role
+  if (!isReady) {
+    return (
+      <View style={splashStyles.container}>
+        <ActivityIndicator size="large" color="#FFB6C1" />
+      </View>
+    );
+  }
+
   return (
     <LanguageProvider>
       <StatusBar style="dark" />
@@ -32,7 +108,47 @@ export default function RootLayout() {
             backgroundColor: '#FFF5F5',
           },
         }}
-      />
+      >
+        {/* Role selection (entry point for new users) */}
+        <Stack.Screen
+          name="role-select"
+          options={{ title: 'Select Role', headerShown: false }}
+        />
+        {/* Main tabs */}
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false }}
+        />
+        {/* Symptom entry form */}
+        <Stack.Screen
+          name="symptoms"
+          options={{ title: 'Health Assessment' }}
+        />
+        {/* Assessment result */}
+        <Stack.Screen
+          name="result"
+          options={{ title: 'Result', headerBackVisible: false }}
+        />
+        {/* Woman profile setup (onboarding) */}
+        <Stack.Screen
+          name="profile-setup"
+          options={{ title: 'Profile Setup', headerShown: false }}
+        />
+        {/* ASHA worker dashboard */}
+        <Stack.Screen
+          name="asha"
+          options={{ title: 'ASHA Dashboard', headerShown: false }}
+        />
+      </Stack>
     </LanguageProvider>
   );
 }
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+  },
+});

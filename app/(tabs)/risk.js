@@ -33,7 +33,8 @@ import {
   calculateHealthScore,
   getRiskHistory,
 } from '../../src/services/HealthDataLogger';
-import { getSyncStatus, syncPendingData } from '../../src/services/SyncManager';
+import { getSyncStatus, syncPendingData } from '../../src/services/syncService';
+import VoiceAlert from '../../src/components/VoiceAlert';
 
 export default function RiskScreen() {
   const { language } = useLanguage();
@@ -45,6 +46,7 @@ export default function RiskScreen() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showDailyLog, setShowDailyLog] = useState(false);
+  const [showVoiceAlert, setShowVoiceAlert] = useState(false);
   
   // Profile form
   const [profile, setProfile] = useState({
@@ -95,10 +97,34 @@ export default function RiskScreen() {
   };
 
   const handleCheckRisk = async () => {
+    // Ensure profile exists before running assessment
+    const currentProfile = await getUserProfile();
+    if (!currentProfile || !currentProfile.age) {
+      Alert.alert(
+        language === 'hi' ? 'प्रोफ़ाइल आवश्यक' : 'Profile Required',
+        language === 'hi'
+          ? 'कृपया पहले स्वास्थ्य प्रोफ़ाइल भरें (आयु, ऊंचाई, वजन)।'
+          : 'Please fill your Health Profile first (age, height, weight).',
+        [
+          { text: t.cancel || 'Cancel', style: 'cancel' },
+          {
+            text: language === 'hi' ? 'प्रोफ़ाइल भरें' : 'Fill Profile',
+            onPress: () => setShowProfile(true),
+          },
+        ]
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       const result = await performRiskAssessment(dailyLog);
       setRiskResult(result);
+      
+      // Show voice alert for Medium or High risk
+      if (result.risk_level === 'Medium' || result.risk_level === 'High') {
+        setShowVoiceAlert(true);
+      }
       
       // Update health score
       const score = await calculateHealthScore();
@@ -115,19 +141,40 @@ export default function RiskScreen() {
   };
 
   const handleSaveProfile = async () => {
-    if (!profile.age || !profile.height || !profile.weight) {
-      Alert.alert('Error', 'Please fill all fields');
+    if (!profile.age) {
+      Alert.alert(
+        language === 'hi' ? 'आवश्यक' : 'Required',
+        language === 'hi' ? 'कृपया आयु दर्ज करें' : 'Please enter your age'
+      );
+      return;
+    }
+
+    const ageNum = parseInt(profile.age);
+    if (isNaN(ageNum) || ageNum < 10 || ageNum > 60) {
+      Alert.alert(
+        language === 'hi' ? 'अमान्य' : 'Invalid',
+        language === 'hi' ? 'आयु 10 से 60 के बीच होनी चाहिए' : 'Age must be between 10 and 60'
+      );
       return;
     }
     
     try {
-      await saveUserProfile({
+      const profileData = {
         age: parseInt(profile.age),
-        height: parseFloat(profile.height),
-        weight: parseFloat(profile.weight),
-      });
+      };
+      if (profile.height && !isNaN(parseFloat(profile.height))) {
+        profileData.height = parseFloat(profile.height);
+      }
+      if (profile.weight && !isNaN(parseFloat(profile.weight))) {
+        profileData.weight = parseFloat(profile.weight);
+      }
+      await saveUserProfile(profileData);
       Alert.alert(t.success, t.profileSaved);
       setShowProfile(false);
+      
+      // Refresh health score after profile save
+      const score = await calculateHealthScore();
+      setHealthScore(score);
     } catch (error) {
       Alert.alert('Error', error.message);
     }
@@ -136,12 +183,18 @@ export default function RiskScreen() {
   const handleSaveDailyLog = async () => {
     setIsLoading(true);
     try {
-      await logDailyHealth(dailyLog);
+      const result = await logDailyHealth(dailyLog);
       Alert.alert(t.success, t.logSaved);
       setShowDailyLog(false);
       
-      // Auto-check risk after logging
-      await handleCheckRisk();
+      // Update display with the risk result returned by logDailyHealth
+      // (it already ran performRiskAssessment internally — no need to call again)
+      if (result && result.risk) {
+        setRiskResult(result.risk);
+      }
+      // Refresh health score
+      const score = await calculateHealthScore();
+      setHealthScore(score);
     } catch (error) {
       Alert.alert('Error', error.message);
     } finally {
@@ -156,10 +209,12 @@ export default function RiskScreen() {
       const status = await getSyncStatus();
       setSyncStatus(status);
       
-      if (result.success) {
+      if (result.synced > 0) {
         Alert.alert(t.success, `Synced ${result.synced} items`);
+      } else if (!result.isOnline) {
+        Alert.alert('Info', language === 'hi' ? 'ऑफलाइन - बाद में सिंक होगा' : 'Offline - will sync later');
       } else {
-        Alert.alert('Info', result.message);
+        Alert.alert('Info', language === 'hi' ? 'कोई डेटा सिंक नहीं' : 'No data to sync');
       }
     } catch (error) {
       Alert.alert('Error', error.message);
@@ -170,10 +225,14 @@ export default function RiskScreen() {
 
   const speakRecommendation = (key) => {
     const text = t[key] || key;
-    Speech.speak(text, {
-      language: language === 'hi' ? 'hi-IN' : 'en-US',
-      rate: 0.9,
-    });
+    try {
+      Speech.speak(text, {
+        language: language === 'hi' ? 'hi-IN' : 'en-US',
+        rate: 0.9,
+      });
+    } catch (e) {
+      // TTS not available — silently ignore
+    }
   };
 
   const getRiskColor = (level) => {
@@ -205,6 +264,17 @@ export default function RiskScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Voice Alert Overlay */}
+      {riskResult && (
+        <VoiceAlert
+          visible={showVoiceAlert}
+          riskLevel={riskResult.risk_level}
+          recommendationKey={riskResult.recommendation_key}
+          onDismiss={() => setShowVoiceAlert(false)}
+          autoSpeak={riskResult.risk_level === 'High'}
+        />
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>{t.riskAssessment}</Text>
@@ -243,7 +313,7 @@ export default function RiskScreen() {
                   {getRiskLabel(riskResult.risk_level)}
                 </Text>
               </View>
-              <Text style={styles.confidence}>{Math.round(riskResult.confidence * 100)}%</Text>
+              <Text style={styles.confidence}>{Math.round((riskResult.confidence || 0) * 100)}%</Text>
             </View>
             
             <View style={styles.recommendationBox}>
@@ -406,15 +476,15 @@ export default function RiskScreen() {
               </Text>
             </View>
             
-            {syncStatus.pendingItems > 0 && (
+            {syncStatus.pendingCount > 0 && (
               <Text style={styles.pendingText}>
-                {t.pendingSync}: {syncStatus.pendingItems} items
+                {t.pendingSync}: {syncStatus.pendingCount} items
               </Text>
             )}
             
-            {syncStatus.lastSyncTime && (
+            {syncStatus.lastSync && (
               <Text style={styles.lastSyncText}>
-                {t.lastSync}: {new Date(syncStatus.lastSyncTime).toLocaleDateString()}
+                {t.lastSync}: {new Date(syncStatus.lastSync).toLocaleDateString()}
               </Text>
             )}
             

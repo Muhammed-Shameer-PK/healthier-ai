@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────
+# AuraHealth — Start Everything
+# ─────────────────────────────────────────────
+# Launches all three services at once:
+#   1. Backend   (Express + MongoDB)  → http://localhost:3000
+#   2. Dashboard (React)              → http://localhost:3001
+#   3. Mobile    (Expo Go)            → Expo DevTools
+#
+# Auto-detects your LAN IP so the phone can
+# reach the backend running on your computer.
+#
+# Usage:
+#   chmod +x start-all.sh
+#   ./start-all.sh
+#
+# Stop all: press Ctrl+C (kills all child processes)
+# ─────────────────────────────────────────────
+
+set -e
+
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Track child PIDs
+PIDS=()
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+echo ""
+echo -e "${CYAN}╔═══════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║       AuraHealth — Starting All Services  ║${NC}"
+echo -e "${CYAN}╚═══════════════════════════════════════════╝${NC}"
+echo ""
+
+# ── Clear caches for a clean start ──────────────
+echo -e "${YELLOW}Clearing caches for a fresh start...${NC}"
+
+# Clear Expo / Metro bundler cache
+rm -rf "$ROOT_DIR/.expo" 2>/dev/null
+rm -rf "$ROOT_DIR/node_modules/.cache" 2>/dev/null
+rm -rf /tmp/metro-* 2>/dev/null
+rm -rf /tmp/haste-map-* 2>/dev/null
+
+# Clear React (dashboard) cache
+rm -rf "$ROOT_DIR/dashboard/node_modules/.cache" 2>/dev/null
+
+echo -e "  ${GREEN}✓ Caches cleared${NC}"
+echo ""
+
+# ── Auto-detect LAN IP ─────────────────────────
+LAN_IP=$(python3 -c "import socket; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.connect(('8.8.8.8',80)); print(s.getsockname()[0]); s.close()" 2>/dev/null || echo "")
+
+if [ -z "$LAN_IP" ]; then
+    LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+fi
+
+if [ -z "$LAN_IP" ]; then
+    echo -e "${RED}Could not detect LAN IP. Using localhost (won't work on physical phone).${NC}"
+    LAN_IP="localhost"
+fi
+
+BACKEND_URL="http://${LAN_IP}:3000/api"
+echo -e "${GREEN}Detected LAN IP: ${CYAN}${LAN_IP}${NC}"
+echo -e "${GREEN}Backend URL:     ${CYAN}${BACKEND_URL}${NC}"
+echo ""
+
+# ── Update app.json with current LAN IP ────────
+if command -v python3 &>/dev/null; then
+    python3 -c "
+import json, sys
+try:
+    with open('${ROOT_DIR}/app.json', 'r') as f:
+        config = json.load(f)
+    config['expo']['extra']['backendUrl'] = '${BACKEND_URL}'
+    with open('${ROOT_DIR}/app.json', 'w') as f:
+        json.dump(config, f, indent=2)
+        f.write('\n')
+    print('  Updated app.json -> backendUrl = ${BACKEND_URL}')
+except Exception as e:
+    print(f'  Warning: Could not update app.json: {e}', file=sys.stderr)
+"
+    echo ""
+fi
+
+# ── Cleanup on exit ─────────────────────────────
+CLEANING_UP=false
+cleanup() {
+    # Prevent recursive calls (SIGINT + EXIT both fire)
+    if $CLEANING_UP; then return; fi
+    CLEANING_UP=true
+
+    echo ""
+    echo -e "${YELLOW}Shutting down all services...${NC}"
+
+    # Kill tracked child processes gracefully
+    for pid in "${PIDS[@]}"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -TERM "$pid" 2>/dev/null
+        fi
+    done
+
+    # Give processes 3 seconds to exit, then force kill
+    sleep 2
+    for pid in "${PIDS[@]}"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill -9 "$pid" 2>/dev/null
+        fi
+    done
+
+    wait 2>/dev/null
+    echo -e "${GREEN}All services stopped.${NC}"
+    exit 0
+}
+trap cleanup SIGINT SIGTERM
+trap 'if ! $CLEANING_UP; then cleanup; fi' EXIT
+
+# ── Check dependencies ──────────────────────────
+check_deps() {
+    local dir="$1"
+    local name="$2"
+    if [ ! -d "$dir/node_modules" ]; then
+        echo -e "${YELLOW}[$name] Installing dependencies...${NC}"
+        if [ "$name" = "Mobile App" ]; then
+            (cd "$dir" && npm install --legacy-peer-deps --silent)
+        else
+            (cd "$dir" && npm install --silent)
+        fi
+    fi
+}
+
+check_deps "$ROOT_DIR" "Mobile App"
+check_deps "$ROOT_DIR/backend" "Backend"
+check_deps "$ROOT_DIR/dashboard" "Dashboard"
+
+# ── Check backend .env ──────────────────────────
+if [ ! -f "$ROOT_DIR/backend/.env" ]; then
+    echo -e "${RED}ERROR: backend/.env not found!${NC}"
+    echo "Copy backend/.env.example to backend/.env and add your MongoDB URI."
+    exit 1
+fi
+
+# ── Auto-create dashboard .env if missing ───────
+if [ ! -f "$ROOT_DIR/dashboard/.env" ]; then
+    if [ -f "$ROOT_DIR/dashboard/.env.example" ]; then
+        cp "$ROOT_DIR/dashboard/.env.example" "$ROOT_DIR/dashboard/.env"
+        echo -e "  ${GREEN}✓ Created dashboard/.env from .env.example${NC}"
+    fi
+fi
+
+# ── Start Backend (port 3000) ───────────────────
+echo -e "${GREEN}[1/3] Starting Backend server (port 3000)...${NC}"
+(cd "$ROOT_DIR/backend" && exec node server.js 2>&1 | sed 's/^/  [Backend] /') &
+PIDS+=($!)
+
+# Wait for backend to be ready
+echo -n "  Waiting for backend"
+for i in {1..10}; do
+    if curl -s "http://localhost:3000/api/ping" > /dev/null 2>&1; then
+        echo ""
+        echo -e "  ${GREEN}✓ Backend running → http://${LAN_IP}:3000${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+done
+
+if ! curl -s "http://localhost:3000/api/ping" > /dev/null 2>&1; then
+    echo ""
+    echo -e "  ${YELLOW}⚠ Backend may still be starting (MongoDB connection can be slow)${NC}"
+fi
+
+# ── Start Dashboard (port 3001) ─────────────────
+echo -e "${GREEN}[2/3] Starting Dashboard (port 3001)...${NC}"
+(cd "$ROOT_DIR/dashboard" && PORT=3001 BROWSER=none exec npm start 2>&1 | sed 's/^/  [Dashboard] /') &
+PIDS+=($!)
+
+echo -e "  ${GREEN}✓ Dashboard starting → http://localhost:3001${NC}"
+
+# ── Start Mobile App (Expo) ────────────────────
+echo -e "${GREEN}[3/3] Starting Mobile App (Expo)...${NC}"
+echo ""
+
+echo -e "${CYAN}═══════════════════════════════════════════${NC}"
+echo -e "${GREEN}  All services launching!${NC}"
+echo ""
+echo -e "  ${CYAN}Backend:${NC}    http://${LAN_IP}:3000   (API for mobile app)"
+echo -e "  ${CYAN}Dashboard:${NC}  http://localhost:3001   (NGO analytics)"
+echo -e "  ${CYAN}Mobile:${NC}     Scan QR code below with Expo Go"
+echo ""
+echo -e "  Press ${YELLOW}Ctrl+C${NC} to stop all services"
+echo -e "${CYAN}═══════════════════════════════════════════${NC}"
+echo ""
+
+# Run Expo in foreground so QR code is visible (--clear resets bundler cache)
+cd "$ROOT_DIR" && npx expo start --lan --clear &
+PIDS+=($!)
+
+# Wait for any child to exit
+wait

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { saveLanguage, getLanguage } from '../utils/storage';
 
-const LanguageContext = createContext();
+export const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState('en');

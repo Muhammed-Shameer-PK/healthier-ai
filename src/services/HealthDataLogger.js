@@ -7,7 +7,7 @@
 
 import * as SecureStore from 'expo-secure-store';
 import { predictRisk, analyzeCycleHistory } from '../engine/RandomForestRiskEngine';
-import { queueForSync, saveHealthLog } from './SyncManager';
+import { addToSyncQueue, getVillageCode } from './storageService';
 import { getPeriodData } from '../utils/storage';
 
 const KEYS = {
@@ -44,13 +44,22 @@ const KEYS = {
  */
 export async function saveUserProfile(profile) {
   try {
+    // Merge with existing profile so partial updates don't wipe fields
+    let existing = {};
+    try {
+      const stored = await SecureStore.getItemAsync(KEYS.USER_PROFILE);
+      if (stored) existing = JSON.parse(stored);
+    } catch (_) {}
+
+    const merged = { ...existing, ...profile };
+
     // Calculate BMI if height and weight provided
-    if (profile.height && profile.weight) {
-      const heightInMeters = profile.height / 100;
-      profile.bmi = Math.round((profile.weight / (heightInMeters * heightInMeters)) * 10) / 10;
+    if (merged.height && merged.weight) {
+      const heightInMeters = merged.height / 100;
+      merged.bmi = Math.round((merged.weight / (heightInMeters * heightInMeters)) * 10) / 10;
     }
     
-    await SecureStore.setItemAsync(KEYS.USER_PROFILE, JSON.stringify(profile));
+    await SecureStore.setItemAsync(KEYS.USER_PROFILE, JSON.stringify(merged));
     return true;
   } catch (error) {
     console.error('Error saving user profile:', error);
@@ -69,6 +78,22 @@ export async function getUserProfile() {
   } catch (error) {
     console.error('Error getting user profile:', error);
     return null;
+  }
+}
+
+/**
+ * Clear all health-related data (profile, logs, risk history, symptoms)
+ * @returns {Promise<boolean>} Whether the data was cleared successfully
+ */
+export async function clearHealthData() {
+  try {
+    await Promise.all(
+      Object.values(KEYS).map((key) => SecureStore.deleteItemAsync(key))
+    );
+    return true;
+  } catch (error) {
+    console.error('Error clearing health data:', error);
+    return false;
   }
 }
 
@@ -116,11 +141,15 @@ export async function logDailyHealth(logData) {
     // Perform risk assessment
     const riskResult = await performRiskAssessment(newLog);
     
-    // Save to health log for sync
-    await saveHealthLog({
-      type: 'daily_log',
-      ...newLog,
-      risk_assessment: riskResult,
+    // Queue for backend sync (unified system)
+    const villageCode = await getVillageCode();
+    await addToSyncQueue({
+      id: Date.now().toString(),
+      villageCode: villageCode || 'UNKNOWN',
+      timestamp: new Date().toISOString(),
+      symptoms: newLog.symptoms || [],
+      score: riskResult.confidence ? Math.round(riskResult.confidence * 10) : 5,
+      level: riskResult.risk_level || 'Unknown',
     });
     
     return {
@@ -238,14 +267,15 @@ export async function performRiskAssessment(dailyLog = null) {
     // Save to risk history
     await saveRiskAssessment(prediction);
     
-    // Queue for sync
-    await queueForSync('risk_assessment', {
-      prediction,
-      userData: {
-        age_group: Math.floor(profile.age / 5) * 5, // Anonymized
-        bmi_category: getBMICategory(profile.bmi),
-        cycle_regularity: cycleAnalysis.regularity,
-      },
+    // Queue for backend sync (unified system)
+    const villageCode = await getVillageCode();
+    await addToSyncQueue({
+      id: 'risk_' + Date.now().toString(),
+      villageCode: villageCode || 'UNKNOWN',
+      timestamp: new Date().toISOString(),
+      symptoms: [],
+      score: prediction.confidence ? Math.round(prediction.confidence * 10) : 5,
+      level: prediction.risk_level || 'Unknown',
     });
     
     return prediction;
@@ -322,8 +352,16 @@ export async function logSymptoms(date, symptoms) {
     
     await SecureStore.setItemAsync(KEYS.SYMPTOMS_LOG, JSON.stringify(allSymptoms));
     
-    // Queue for sync
-    await queueForSync('symptoms_log', { date, symptoms });
+    // Queue for backend sync (unified system)
+    const villageCode = await getVillageCode();
+    await addToSyncQueue({
+      id: 'symptom_' + Date.now().toString(),
+      villageCode: villageCode || 'UNKNOWN',
+      timestamp: new Date().toISOString(),
+      symptoms: symptoms,
+      score: 0,
+      level: 'LOG',
+    });
     
     return true;
   } catch (error) {

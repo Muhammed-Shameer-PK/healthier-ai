@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { Plus, Droplet, Heart, Frown, Smile, Meh } from 'lucide-react-native';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,22 +18,37 @@ export default function CycleCalendar() {
   }, []);
 
   const loadPeriodData = async () => {
-    const data = await getPeriodData();
-    if (data) {
-      const marked = {};
-      data.forEach(date => {
-        marked[date] = {
-          selected: true,
-          selectedColor: '#FFB6C1',
-          marked: true,
-          dotColor: '#FF6B6B',
-        };
-      });
-      setMarkedDates(marked);
+    try {
+      const data = await getPeriodData();
+      if (data && Array.isArray(data)) {
+        const marked = {};
+        data.forEach(date => {
+          if (typeof date === 'string') {
+            marked[date] = {
+              selected: true,
+              selectedColor: '#FFB6C1',
+              marked: true,
+              dotColor: '#FF6B6B',
+            };
+          }
+        });
+        setMarkedDates(marked);
+      }
+    } catch (e) {
+      console.warn('[Calendar] Failed to load period data:', e);
     }
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const handleDayPress = (day) => {
+    if (day.dateString > todayStr) {
+      Alert.alert(
+        '',
+        language === 'hi' ? 'भविष्य की तारीख लॉग नहीं कर सकते' : 'Cannot log future dates'
+      );
+      return;
+    }
     setSelectedDate(day.dateString);
     setModalVisible(true);
   };
@@ -93,6 +108,7 @@ export default function CycleCalendar() {
           textMonthFontWeight: 'bold',
           textDayHeaderFontWeight: '500',
         }}
+        maxDate={todayStr}
         style={styles.calendar}
       />
 

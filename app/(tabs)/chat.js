@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,30 +13,59 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Send, Volume2 } from 'lucide-react-native';
 import * as Speech from 'expo-speech';
+import * as SecureStore from 'expo-secure-store';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { translations } from '../../src/constants/translations';
 import { getHealthAdvice } from '../../src/api/gemini';
 
+const CHAT_STORAGE_KEY = 'aurahealth_chat_history';
+
 export default function ChatScreen() {
   const { language } = useLanguage();
   const t = translations[language];
-  const [messages, setMessages] = useState([
-    {
-      id: '1',
-      text: t.welcomeMessage,
-      isBot: true,
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef(null);
+  const hasLoaded = useRef(false);
+
+  // Load chat history on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await SecureStore.getItemAsync(CHAT_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+            hasLoaded.current = true;
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[Chat] Failed to load history:', e);
+      }
+      // No saved history — show welcome message
+      setMessages([{ id: '1', text: t.welcomeMessage, isBot: true }]);
+      hasLoaded.current = true;
+    })();
+  }, []);
+
+  // Save chat history whenever messages change (after initial load)
+  useEffect(() => {
+    if (!hasLoaded.current || messages.length === 0) return;
+    // Keep only the last 50 messages to stay within SecureStore limits
+    const toSave = messages.slice(-50);
+    SecureStore.setItemAsync(CHAT_STORAGE_KEY, JSON.stringify(toSave)).catch(() => {});
+  }, [messages]);
 
   const sendMessage = async () => {
-    if (!inputText.trim()) return;
+    const trimmed = inputText.trim();
+    if (!trimmed || isLoading) return;
 
     const userMessage = {
       id: Date.now().toString(),
-      text: inputText,
+      text: trimmed,
       isBot: false,
     };
 
@@ -45,7 +74,7 @@ export default function ChatScreen() {
     setIsLoading(true);
 
     try {
-      const response = await getHealthAdvice(inputText, language);
+      const response = await getHealthAdvice(trimmed, language);
       const botMessage = {
         id: (Date.now() + 1).toString(),
         text: response,
@@ -64,12 +93,13 @@ export default function ChatScreen() {
     }
   };
 
-  const speakMessage = (text) => {
-    const langCode = language === 'hi' ? 'hi-IN' : 'en-US';
-    Speech.speak(text, {
-      language: langCode,
-      rate: 0.9,
-    });
+  const speakMessage = async (text) => {
+    try {
+      const langCode = language === 'hi' ? 'hi-IN' : 'en-US';
+      await Speech.speak(text, { language: langCode, rate: 0.9 });
+    } catch (e) {
+      // TTS not available on this device — silently ignore
+    }
   };
 
   const renderMessage = ({ item }) => (

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -21,11 +22,14 @@ import {
   Flower2,
   ChevronRight,
   TrendingUp,
+  Stethoscope,
 } from 'lucide-react-native';
 import LanguageSwitch from '../../src/components/LanguageSwitch';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { translations } from '../../src/constants/translations';
 import { getPeriodData } from '../../src/utils/storage';
+import { getRole } from '../../src/services/storageService';
+import { getUserProfile } from '../../src/services/HealthDataLogger';
 
 const { width } = Dimensions.get('window');
 
@@ -38,12 +42,38 @@ export default function HomeScreen() {
   const [cycleDay, setCycleDay] = useState(null);
   const [nextPeriodDays, setNextPeriodDays] = useState(null);
   const [todayTip, setTodayTip] = useState('');
+  const [userRole, setUserRole] = useState(null);
+  const [hasProfile, setHasProfile] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setGreetingMessage();
-    loadCycleInfo();
-    setDailyTip();
+    const init = async () => {
+      setIsLoading(true);
+      setGreetingMessage();
+      setDailyTip();
+      await Promise.all([loadCycleInfo(), loadRole(), checkProfile()]);
+      setIsLoading(false);
+    };
+    init();
   }, [language]);
+
+  const checkProfile = async () => {
+    try {
+      const profile = await getUserProfile();
+      setHasProfile(!!(profile && profile.age));
+    } catch (e) {
+      setHasProfile(false);
+    }
+  };
+
+  const loadRole = async () => {
+    try {
+      const role = await getRole();
+      setUserRole(role);
+    } catch (e) {
+      console.warn('[Home] Failed to load role:', e);
+    }
+  };
 
   const setGreetingMessage = () => {
     const hour = new Date().getHours();
@@ -68,8 +98,14 @@ export default function HomeScreen() {
         
         setCycleDay(diffDays);
         
-        // Estimate next period (assuming 28-day cycle)
-        const avgCycle = 28;
+        // Use saved cycle length from profile, default to 28
+        let avgCycle = 28;
+        try {
+          const profile = await getUserProfile();
+          if (profile && profile.avgCycleLength) {
+            avgCycle = profile.avgCycleLength;
+          }
+        } catch (_) {}
         const nextPeriod = avgCycle - diffDays;
         setNextPeriodDays(nextPeriod > 0 ? nextPeriod : 0);
       }
@@ -135,8 +171,17 @@ export default function HomeScreen() {
 
   const quickActions = [
     {
+      id: 'symptoms',
+      title: language === 'hi' ? 'जोखिम जांच' : 'Risk Check',
+      subtitle: language === 'hi' ? 'लक्षण दर्ज करें' : 'Log symptoms',
+      icon: <Activity size={24} color="#FFF" />,
+      color: '#E91E63',
+      onPress: () => router.push('/symptoms'),
+    },
+    {
       id: 'calendar',
       title: language === 'hi' ? 'कैलेंडर' : 'Calendar',
+      subtitle: language === 'hi' ? 'पीरियड ट्रैक करें' : 'Track periods',
       icon: <Calendar size={24} color="#FFF" />,
       color: '#FF6B6B',
       onPress: () => router.push('/calendar'),
@@ -144,23 +189,39 @@ export default function HomeScreen() {
     {
       id: 'chat',
       title: language === 'hi' ? 'AI सहायक' : 'AI Chat',
+      subtitle: language === 'hi' ? 'स्वास्थ्य सलाह' : 'Health advice',
       icon: <MessageCircle size={24} color="#FFF" />,
       color: '#4CAF50',
       onPress: () => router.push('/chat'),
     },
     {
       id: 'risk',
-      title: language === 'hi' ? 'स्वास्थ्य जांच' : 'Health Check',
-      icon: <Activity size={24} color="#FFF" />,
+      title: language === 'hi' ? 'दैनिक स्वास्थ्य' : 'Daily Health',
+      subtitle: language === 'hi' ? 'तनाव, नींद, व्यायाम' : 'Stress, sleep, exercise',
+      icon: <TrendingUp size={24} color="#FFF" />,
       color: '#2196F3',
       onPress: () => router.push('/risk'),
     },
+    // Show ASHA Dashboard for ASHA workers
+    ...(userRole === 'asha' ? [{
+      id: 'asha',
+      title: language === 'hi' ? 'आशा डैशबोर्ड' : 'ASHA Dashboard',
+      subtitle: language === 'hi' ? 'मरीज रिकॉर्ड' : 'Patient records',
+      icon: <Stethoscope size={24} color="#FFF" />,
+      color: '#9C27B0',
+      onPress: () => router.push('/asha'),
+    }] : []),
   ];
 
   const phase = getCyclePhase();
 
   return (
     <SafeAreaView style={styles.container}>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFB6C1" />
+        </View>
+      ) : (
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -232,6 +293,30 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* Profile Setup Prompt */}
+        {!hasProfile && (
+          <TouchableOpacity
+            style={styles.profilePromptCard}
+            onPress={() => router.push('/profile-setup')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.profilePromptContent}>
+              <Stethoscope size={24} color="#FF6B6B" />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={styles.profilePromptTitle}>
+                  {language === 'hi' ? 'अपनी प्रोफ़ाइल पूरी करें' : 'Complete Your Profile'}
+                </Text>
+                <Text style={styles.profilePromptSubtitle}>
+                  {language === 'hi'
+                    ? 'बेहतर स्वास्थ्य जानकारी के लिए अपना विवरण दें'
+                    : 'Add your details for better health insights'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color="#FF6B6B" />
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Daily Tip */}
         <View style={styles.tipCard}>
           <Sparkles size={20} color="#FFB6C1" />
@@ -267,6 +352,7 @@ export default function HomeScreen() {
           </Text>
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -275,6 +361,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF5F5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -390,6 +481,30 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  profilePromptCard: {
+    marginHorizontal: 20,
+    marginTop: 15,
+    backgroundColor: '#FFF0F0',
+    borderRadius: 15,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#FFB6C1',
+    borderStyle: 'dashed',
+  },
+  profilePromptContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profilePromptTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FF6B6B',
+    marginBottom: 2,
+  },
+  profilePromptSubtitle: {
+    fontSize: 12,
+    color: '#999',
   },
   tipCard: {
     flexDirection: 'row',
