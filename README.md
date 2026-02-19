@@ -1,4 +1,4 @@
-# Healtheir 
+# Healthier 
 
 A privacy-first, vernacular-supported menstrual wellness tracker built for the **CodeSangram Hackathon**.
 
