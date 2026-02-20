@@ -18,9 +18,10 @@
 set -e
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# ── Colors ────────────────────────────────────────────────────────────────────
+# ── Colors & shared helpers ───────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
+source "$(dirname "$0")/_common.sh"
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
@@ -49,22 +50,11 @@ git checkout main
 echo -e "${GREEN}  ✓ On branch: $(git branch --show-current)${NC}"
 echo ""
 
-# ── Clear caches ──────────────────────────────────────────────────────────────
-echo -e "${YELLOW}Clearing Metro and Expo caches...${NC}"
-rm -rf "$ROOT_DIR/.expo"             2>/dev/null || true
-rm -rf "$ROOT_DIR/node_modules/.cache" 2>/dev/null || true
-rm -rf /tmp/metro-*                  2>/dev/null || true
-rm -rf /tmp/haste-map-*              2>/dev/null || true
-echo -e "  ${GREEN}✓ Caches cleared${NC}"
-echo ""
+# ── Reset: kill ports, clear all caches ──────────────────────────────────────
+clear_all_caches "$ROOT_DIR"
 
 # ── Install deps if needed ────────────────────────────────────────────────────
-if [ ! -d "$ROOT_DIR/node_modules" ]; then
-    echo -e "${YELLOW}Installing dependencies (first run)...${NC}"
-    cd "$ROOT_DIR" && npm install --legacy-peer-deps
-    echo -e "  ${GREEN}✓ Dependencies installed${NC}"
-    echo ""
-fi
+ensure_deps "$ROOT_DIR" "Mobile App" "--legacy-peer-deps"
 
 # ── Start ─────────────────────────────────────────────────────────────────────
 echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"

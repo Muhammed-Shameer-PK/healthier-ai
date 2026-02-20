@@ -29,7 +29,11 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
+
+# Shared helpers (kill_port, clear_all_caches, detect_lan_ip, ensure_deps)
+source "$ROOT_DIR/scripts/_common.sh"
 
 echo ""
 echo -e "${CYAN}╔═══════════════════════════════════════════╗${NC}"
@@ -37,27 +41,13 @@ echo -e "${CYAN}║       AuraHealth — Starting All Services  ║${NC}"
 echo -e "${CYAN}╚═══════════════════════════════════════════╝${NC}"
 echo ""
 
-# ── Clear caches for a clean start ──────────────
-echo -e "${YELLOW}Clearing caches for a fresh start...${NC}"
-
-# Clear Expo / Metro bundler cache
-rm -rf "$ROOT_DIR/.expo" 2>/dev/null
-rm -rf "$ROOT_DIR/node_modules/.cache" 2>/dev/null
-rm -rf /tmp/metro-* 2>/dev/null
-rm -rf /tmp/haste-map-* 2>/dev/null
-
-# Clear React (dashboard) cache
-rm -rf "$ROOT_DIR/dashboard/node_modules/.cache" 2>/dev/null
-
-echo -e "  ${GREEN}✓ Caches cleared${NC}"
-echo ""
-
-# ── Auto-detect LAN IP ─────────────────────────
-LAN_IP=$(python3 -c "import socket; s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM); s.connect(('8.8.8.8',80)); print(s.getsockname()[0]); s.close()" 2>/dev/null || echo "")
-
-if [ -z "$LAN_IP" ]; then
-    LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+# ── Reset: kill all ports, clear all caches (incl. dashboard) ────────────
+# Ensure a completely fresh start every run
+if [ ! -f "$ROOT_DIR/dashboard/.env" ] && [ -f "$ROOT_DIR/dashboard/.env.example" ]; then
+    cp "$ROOT_DIR/dashboard/.env.example" "$ROOT_DIR/dashboard/.env"
 fi
+clear_all_caches "$ROOT_DIR" dashboard
+detect_lan_ip "$ROOT_DIR"
 
 if [ -z "$LAN_IP" ]; then
     echo -e "${RED}Could not detect LAN IP. Using localhost (won't work on physical phone).${NC}"
@@ -119,25 +109,12 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 trap 'if ! $CLEANING_UP; then cleanup; fi' EXIT
 
-# ── Check dependencies ──────────────────────────
-check_deps() {
-    local dir="$1"
-    local name="$2"
-    if [ ! -d "$dir/node_modules" ]; then
-        echo -e "${YELLOW}[$name] Installing dependencies...${NC}"
-        if [ "$name" = "Mobile App" ]; then
-            (cd "$dir" && npm install --legacy-peer-deps --silent)
-        else
-            (cd "$dir" && npm install --silent)
-        fi
-    fi
-}
+# ── Install dependencies ────────────────────────────────────────────────────
+ensure_deps "$ROOT_DIR"           "Mobile App" "--legacy-peer-deps"
+ensure_deps "$ROOT_DIR/backend"   "Backend"
+ensure_deps "$ROOT_DIR/dashboard" "Dashboard"
 
-check_deps "$ROOT_DIR" "Mobile App"
-check_deps "$ROOT_DIR/backend" "Backend"
-check_deps "$ROOT_DIR/dashboard" "Dashboard"
-
-# ── Check backend .env ──────────────────────────
+# ── Check backend .env ──────────────────────────────────────────────────────
 if [ ! -f "$ROOT_DIR/backend/.env" ]; then
     echo -e "${RED}ERROR: backend/.env not found!${NC}"
     echo "Copy backend/.env.example to backend/.env and add your MongoDB URI."
