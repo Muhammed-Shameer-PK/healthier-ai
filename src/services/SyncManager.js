@@ -7,6 +7,7 @@
 
 import * as SecureStore from 'expo-secure-store';
 import NetInfo from '@react-native-community/netinfo';
+import { SYNC_CONFIG } from '../utils/constants';
 
 const KEYS = {
   SYNC_QUEUE: 'aurahealth_sync_queue',
@@ -15,8 +16,10 @@ const KEYS = {
   DEVICE_ID: 'aurahealth_device_id',
 };
 
-// Backend API endpoint (configure for your server)
-const API_BASE_URL = 'https://your-backend-api.com/api/v1';
+// Backend API URL — read dynamically from app.json extra.backendUrl
+// (set by start-all.sh / start-mvp-final.sh to your machine's LAN IP at launch)
+// Falls back to the hosted Render instance when running outside LAN.
+const API_BASE_URL = SYNC_CONFIG.API_BASE_URL;
 
 /**
  * Generate a unique device ID for anonymous sync

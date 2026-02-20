@@ -128,6 +128,25 @@ if [ ! -f "$ROOT_DIR/dashboard/.env" ] && [ -f "$ROOT_DIR/dashboard/.env.example
     echo -e "  ${GREEN}✓ Created dashboard/.env from .env.example${NC}"
 fi
 
+# Always write the current LAN IP into dashboard/.env so the React dashboard
+# talks to the running backend — not a stale or hardcoded address.
+if [ -f "$ROOT_DIR/dashboard/.env" ]; then
+    python3 -c "
+import re
+path = '${ROOT_DIR}/dashboard/.env'
+with open(path) as f:
+    content = f.read()
+new_line = 'REACT_APP_API_URL=${BACKEND_URL}'
+if re.search(r'^REACT_APP_API_URL=', content, re.MULTILINE):
+    content = re.sub(r'^REACT_APP_API_URL=.*', new_line, content, flags=re.MULTILINE)
+else:
+    content = content.rstrip('\n') + '\n' + new_line + '\n'
+with open(path, 'w') as f:
+    f.write(content)
+print('  Updated dashboard/.env → REACT_APP_API_URL = ${BACKEND_URL}')
+" 2>/dev/null || true
+fi
+
 # ── Cleanup on Ctrl+C ─────────────────────────────────────────────────────────
 CLEANING_UP=false
 cleanup() {
