@@ -1,21 +1,24 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import CycleCalendar from '../../src/components/Calendar';
+import LanguageSwitch from '../../src/components/LanguageSwitch';
+import { useLanguage } from '../../src/context/LanguageContext';
 
 export default function CalendarScreen() {
+  const { t } = useLanguage();
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>📅</Text>
-      <Text style={styles.title}>Cycle Calendar</Text>
-      <Text style={styles.text}>
-        Period tracking calendar coming in a future sprint.
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t.calendar}</Text>
+        <LanguageSwitch />
+      </View>
+      <CycleCalendar />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF5F5', padding: 24 },
-  icon:  { fontSize: 48, marginBottom: 12 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#C2185B', marginBottom: 12 },
-  text:  { fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 22 },
+  container: { flex: 1, backgroundColor: '#FFF5F5' },
+  header:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 50 },
+  title:     { fontSize: 22, fontWeight: 'bold', color: '#C2185B' },
 });
