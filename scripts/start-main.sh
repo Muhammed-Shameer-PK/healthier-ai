@@ -26,15 +26,14 @@ source "$(dirname "$0")/_common.sh"
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║   AuraHealth  ·  Branch: main                    ║${NC}"
-echo -e "${CYAN}║   Phase 1 — Base Setup & Navigation              ║${NC}"
+echo -e "${CYAN}║   Phase 1 — Navigation Skeleton                  ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  ${BOLD}Features in this branch:${NC}"
-echo -e "  ${GREEN}✓${NC} Expo Router tab navigation"
-echo -e "  ${GREEN}✓${NC} Home / Calendar / Chat / Risk / Settings screens"
-echo -e "  ${GREEN}✓${NC} Role-selection (Woman / ASHA worker)"
-echo -e "  ${GREEN}✓${NC} Bilingual support (English / Hindi)"
+echo -e "  ${GREEN}✓${NC} Expo Router tab navigation (5 tabs)"
+echo -e "  ${GREEN}✓${NC} Placeholder screens: Home, Calendar, Chat, Risk, Settings"
 echo -e "  ${GREEN}✓${NC} Pastel theme (#FFF5F5, #FFB6C1)"
+echo -e "  ${YELLOW}○${NC} No logic, no storage, no AI — skeleton only"
 echo ""
 
 # ── Switch to branch ──────────────────────────────────────────────────────────
@@ -47,6 +46,7 @@ if ! git diff --quiet || ! git diff --staged --quiet; then
 fi
 
 git checkout main
+git clean -fd app/ src/ 2>/dev/null || true
 echo -e "${GREEN}  ✓ On branch: $(git branch --show-current)${NC}"
 echo ""
 
