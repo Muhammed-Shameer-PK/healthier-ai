@@ -6,28 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "extra": {
-      "geminiApiKey": "AIzaSyCy1dFMLzFARAD_oWs04pq1zecl63AtR34",
-      "backendUrl": "http://10.37.139.166:3000/api"
-    },
     "splash": {
       "backgroundColor": "#FFF5F5"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "AuraHealth needs your location for emergency alerts to help responders find you."
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FFF5F5"
-      },
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "SEND_SMS"
-      ]
+      }
     },
     "web": {
       "bundler": "metro"
@@ -37,13 +25,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-asset",
-      "expo-font",
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "AuraHealth needs your location for emergency alerts."
-        }
-      ]
+      "expo-font"
     ]
   }
 }

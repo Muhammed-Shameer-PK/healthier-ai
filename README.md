@@ -1,408 +1,119 @@
-# 🏥 AuraHealth — Offline-First Rural Women's Health Platform
+# Healthier 
 
-A **privacy-first, offline-capable** menstrual wellness and health risk assessment platform designed for rural women and ASHA (Accredited Social Health Activist) workers in India.
+A privacy-first, vernacular-supported menstrual wellness tracker built for the **CodeSangram Hackathon**.
 
-Built for the **CodeSangram Hackathon**.
+## ✨ Features
 
----
+### 1. 📅 Cycle Tracker
+- Visual calendar using `react-native-calendars`
+- Log period days and moods
+- Offline cycle prediction algorithm
 
-## 📋 Table of Contents
+### 2. 🤖 AI Health Advocate
+- Chat interface powered by Gemini API
+- Personalized health advice in your language
+- Text-to-speech for accessibility (especially for rural users)
 
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-  - [Mobile App](#1-mobile-app-react-native--expo)
-  - [Backend](#2-backend-nodejs--express--mongodb)
-  - [NGO Dashboard](#3-ngo-dashboard-react--chartjs)
-- [Features](#features)
-- [System Flow](#system-flow)
-- [Privacy & Security](#privacy--security)
-- [Deployment](#deployment)
+### 3. 🗣️ Vernacular Support
+- **English** and **Hindi** (हिंदी)
+- Easy language toggle
+- All UI elements translated
 
----
+### 4. 🔒 Privacy First
+- All data stored locally using `expo-secure-store`
+- No cloud uploads or tracking
+- Secure encryption on device
 
-## Overview
+### 5. 📊 Mood Heatmap
+- Visual mood tracking over time
+- See patterns in your emotional wellbeing
 
-AuraHealth addresses critical gaps in rural women's healthcare by providing:
+## 🛠️ Tech Stack
 
-- **Offline risk assessment** using rule-based scoring (NO AI/ML)
-- **Emergency SMS + GPS alerts** that work without internet
-- **Bilingual support** (English + Hindi) for rural accessibility
-- **ASHA Worker mode** for field visit management
-- **Anonymized data sync** to a central backend for NGO analytics
-- **NGO Dashboard** with charts for program monitoring
+- **React Native** (Expo Go)
+- **Expo Router** for navigation
+- **Lucide Icons** for beautiful UI
+- **Gemini API** for AI health insights
+- **expo-secure-store** for local data storage
+- **expo-speech** for text-to-speech
+- **react-native-calendars** for cycle tracking
 
----
-
-## Architecture
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                    MOBILE APP (Expo)                     │
-│                                                          │
-│  ┌──────────┐   ┌────────────┐   ┌────────────┐          │
-│  │ Symptom  │ → │ Risk       │ → │ Emergency  │          │
-│  │ Form     │   │ Engine     │   │ Layer      │          │
-│  └──────────┘   └────────────┘   └──────┬─────┘          │
-│                                           │              │
-│                                   ┌───────▼───────┐      │
-│                                   │ Local Storage │      │
-│                                   └───────────────┘      │
-│                                                          │
-│        100% Offline ✅        SMS + GPS ✅               │
-└──────────────────────────────────────────────────────────┘
-                             │
-                             │ Sync
-                             ▼
-┌──────────────────────────────────────────────────────────┐
-│              BACKEND (Express + MongoDB)                 │
-│                                                          │
-│  ┌────────────┐   ┌──────────────┐   ┌───────────────┐   │
-│  │ POST       │ ← │ Anonymized   │ ← │ Health Records│   │
-│  │ /api/sync  │   │ Data Only    │   │ (No PII)      │   │
-│  └────────────┘   └──────────────┘   └───────────────┘   │
-└──────────────────────────────────────────────────────────┘
-                             │
-                             │ API
-                             ▼
-┌──────────────────────────────────────────────────────────┐
-│            NGO DASHBOARD (React + Chart.js)              │
-│                                                          │
-│  ┌──────────┐   ┌──────────┐   ┌──────────┐              │
-│  │ Pie      │   │ Bar      │   │ Line     │              │
-│  │ Chart    │   │ Chart    │   │ Chart    │              │
-│  └──────────┘   └──────────┘   └──────────┘              │
-└──────────────────────────────────────────────────────────┘
-
-```
-
----
-
-## Tech Stack
-
-| Component | Technology | Cost |
-|-----------|-----------|------|
-| Mobile App | React Native (Expo) | Free |
-| Navigation | Expo Router | Free |
-| Risk Engine | Pure JavaScript (Rule-based) | Free |
-| Local Storage | expo-secure-store + AsyncStorage | Free |
-| Emergency | expo-sms + expo-location | Free |
-| Backend | Node.js + Express | Free |
-| Database | MongoDB Atlas (M0 Free Tier) | Free |
-| Dashboard | React + Chart.js | Free |
-| Hosting | Render.com Free Tier | Free |
-
----
-
-## Project Structure
-
-```
-healthier-ai/
-├── app/                          # Expo Router routes
-│   ├── _layout.js                # Root layout (auto-sync)
-│   ├── role-select.js            # Role selection route
-│   ├── symptoms.js               # Symptom form route  
-│   ├── result.js                 # Assessment result route
-│   ├── asha.js                   # ASHA dashboard route
-│   └── (tabs)/                   # Tab navigation
-│       ├── _layout.js
-│       ├── index.js              # Home screen
-│       ├── calendar.js           # Cycle calendar
-│       ├── risk.js               # Health risk
-│       ├── chat.js               # AI chat
-│       └── settings.js           # Settings
-│
-├── src/
-│   ├── screens/                  # Screen components
-│   │   ├── RoleSelectionScreen.js
-│   │   ├── SymptomScreen.js
-│   │   ├── ResultScreen.js
-│   │   └── ASHAScreen.js
-│   ├── components/
-│   │   ├── SymptomToggle.js      # Toggle button
-│   │   ├── RiskBadge.js          # Color-coded badge
-│   │   ├── Calendar.js
-│   │   ├── CyclePrediction.js
-│   │   ├── MoodHeatmap.js
-│   │   ├── LanguageSwitch.js
-│   │   └── VoiceAlert.js
-│   ├── services/
-│   │   ├── riskEngine.js         # Rule-based scoring
-│   │   ├── storageService.js     # Encrypted local storage
-│   │   ├── syncService.js        # Background sync  
-│   │   ├── emergencyService.js   # SMS + GPS emergency
-│   │   ├── HealthDataLogger.js
-│   │   └── SyncManager.js
-│   ├── utils/
-│   │   ├── constants.js          # App constants + config
-│   │   └── storage.js            # Core storage utils
-│   ├── context/
-│   │   └── LanguageContext.js
-│   ├── constants/
-│   │   └── translations.js
-│   ├── engine/
-│   │   └── RandomForestRiskEngine.js
-│   ├── hooks/
-│   │   └── useCycleTracker.js
-│   └── api/
-│       └── gemini.js
-│
-├── backend/                      # Express + MongoDB backend
-│   ├── server.js
-│   ├── package.json
-│   ├── .env.example
-│   ├── models/
-│   │   └── HealthRecord.js
-│   └── routes/
-│       └── healthRoutes.js
-│
-├── dashboard/                    # React NGO dashboard
-│   ├── package.json
-│   ├── .env.example
-│   ├── public/
-│   │   └── index.html
-│   └── src/
-│       ├── index.js
-│       ├── App.js
-│       └── components/
-│           ├── LoginScreen.js
-│           └── Dashboard.js
-│
-├── package.json
-├── app.json
-├── babel.config.js
-└── README.md
-```
-
----
-
-## Setup Instructions
+## 🚀 Getting Started
 
 ### Prerequisites
+- Node.js (v18 or higher)
+- Expo Go app on your phone
+- Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-- Node.js 18+
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
-- Expo Go app on your phone (for mobile testing)
-- MongoDB Atlas account (free)
+### Installation
 
-### 1. Mobile App (React Native + Expo)
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-```bash
-# Clone the repo
-git clone <repo-url>
-cd healthier-ai
+2. **Add your Gemini API key:**
+   Open `src/api/gemini.js` and replace:
+   ```javascript
+   const API_KEY = 'YOUR_GEMINI_API_KEY';
+   ```
 
-# Install dependencies
-npm install --legacy-peer-deps
+3. **Start the development server:**
+   ```bash
+   npx expo start
+   ```
 
-# Start the Expo dev server
-npx expo start
+4. **Run on your device:**
+   - Scan the QR code with Expo Go (Android)
+   - Scan with Camera app (iOS)
 
-# Scan the QR code with Expo Go app
-```
-
-### 2. Backend (Node.js + Express + MongoDB)
-
-```bash
-# Navigate to backend folder
-cd backend
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your MongoDB Atlas URI:
-#   MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/aurahealth
-
-# Start the server
-npm run dev
-# Server runs on http://localhost:3000
-```
-
-#### MongoDB Atlas Setup (Free)
-
-1. Go to [cloud.mongodb.com](https://cloud.mongodb.com)
-2. Create a free account
-3. Create a cluster (M0 Free Tier)
-4. Create a database user
-5. Whitelist your IP (or 0.0.0.0/0 for development)
-6. Get the connection string
-7. Paste it in `backend/.env` as `MONGODB_URI`
-
-### 3. NGO Dashboard (React + Chart.js)
-
-```bash
-# Navigate to dashboard folder
-cd dashboard
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your backend URL:
-#   REACT_APP_API_URL=http://localhost:3000/api
-
-# Start the dashboard
-npm start
-# Dashboard runs on http://localhost:3001
-```
-
-**Default login password:** `aurahealth2024`
-
----
-
-## Features
-
-### Mobile App
-
-| Feature | Description | Offline? |
-|---------|-------------|----------|
-| Role Selection | Woman mode / ASHA worker mode | ✅ |
-| Symptom Form | Toggle-based symptom entry with Hb field | ✅ |
-| Risk Engine | Weighted rule-based scoring (0-3 LOW, 4-6 MOD, 7+ HIGH) | ✅ |
-| Emergency SMS | Auto-send GPS location via SMS on HIGH risk | ✅ |
-| Emergency Call | Prompt to call 112 for emergencies | ✅ |
-| Cycle Tracking | Calendar-based period logging | ✅ |
-| Data Storage | Encrypted local storage (no PII) | ✅ |
-| Background Sync | Auto-sync when internet available | ☁️ |
-| Bilingual | English + Hindi | ✅ |
-| ASHA Dashboard | Field visit management + patient counts | ✅ |
-
-### Backend API
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/ping` | GET | Connectivity check |
-| `/api/sync` | POST | Receive health records |
-| `/api/analytics/village/:code` | GET | Village statistics |
-| `/api/analytics/trends/:code` | GET | Monthly trends |
-| `/api/analytics/villages` | GET | List all villages |
-
-### NGO Dashboard
-
-- Password-protected login
-- Village selector dropdown
-- Pie chart — Risk level distribution
-- Bar chart — Symptom prevalence rates
-- Line chart — Monthly trend analysis
-- Summary stat cards
-
----
-
-## System Flow
+## 📁 Project Structure
 
 ```
-User/ASHA enters symptoms
-        ↓
-riskEngine calculates locally (100% offline)
-        ↓
-Emergency layer checks intensity
-        ↓
-Action triggered (advice / SMS / call prompt)
-        ↓
-Data stored encrypted locally (no PII)
-        ↓
-When online → synced to backend
-        ↓
-Backend aggregates anonymized data
-        ↓
-NGO Dashboard shows trends & charts
+├── app/                      # Expo Router pages
+│   ├── _layout.js           # Root layout with providers
+│   └── (tabs)/              # Tab-based navigation
+│       ├── index.js         # Home screen with calendar
+│       ├── chat.js          # AI health advocate
+│       └── settings.js      # App settings
+├── src/
+│   ├── api/
+│   │   └── gemini.js        # Gemini API integration
+│   ├── components/
+│   │   ├── Calendar.js      # Period tracking calendar
+│   │   ├── LanguageSwitch.js # EN/ML toggle
+│   │   ├── CyclePrediction.js # Next period prediction
+│   │   └── MoodHeatmap.js   # Mood visualization
+│   ├── context/
+│   │   └── LanguageContext.js # Language state management
+│   ├── hooks/
+│   │   └── useCycleTracker.js # Cycle prediction logic
+│   ├── constants/
+│   │   └── translations.js  # EN/ML translations
+│   └── utils/
+│       └── storage.js       # Secure storage utilities
+└── assets/                  # App icons and images
 ```
 
----
+## 🎨 Design
 
-## Privacy & Security
+- **Primary Colors:** `#FFF5F5` (background), `#FFB6C1` (accent)
+- **Style:** Soft pastel, minimalist, accessible
+- **Target Users:** Rural women with varying tech literacy
 
-- **NO names** stored or synced
-- **NO phone numbers** stored in records
-- **NO Aadhaar / ID numbers** anywhere
-- **NO exact addresses** — only village codes
-- Only anonymized, aggregated data reaches the server
-- Local data encrypted via `expo-secure-store`
-- HTTPS enforced on backend (via deployment platform)
-- Rate limiting (100 req/15min per IP)
-- Environment variables for all secrets
-- Helmet.js for security headers
+## 🏆 Hackathon Features
 
----
-
-## Deployment
-
-### Backend → Render.com (Free)
-
-1. Push `backend/` to a GitHub repo
-2. Go to [render.com](https://render.com) → New Web Service
-3. Connect your GitHub repo
-4. Set root directory: `backend`
-5. Build command: `npm install`
-6. Start command: `node server.js`
-7. Add environment variables:
-   - `MONGODB_URI` = your Atlas connection string
-   - `DASHBOARD_PASSWORD` = your chosen password
-
-### Dashboard → Netlify (Free)
-
-1. Push `dashboard/` to a GitHub repo
-2. Go to [netlify.com](https://netlify.com) → New Site
-3. Connect your GitHub repo
-4. Set base directory: `dashboard`
-5. Build command: `npm run build`
-6. Publish directory: `dashboard/build`
-7. Add environment variables:
-   - `REACT_APP_API_URL` = your Render backend URL
-   - `REACT_APP_DASHBOARD_PASSWORD` = your chosen password
-
-### Mobile App → Update URLs
-
-After deploying the backend, update `src/utils/constants.js`:
-
-```js
-export const SYNC_CONFIG = {
-  API_BASE_URL: 'https://your-backend.onrender.com/api',
-  PING_URL: 'https://your-backend.onrender.com/api/ping',
-  ...
-};
-```
-
----
-
-## Risk Engine Logic
-
-**Symptom Weights:**
-| Symptom | Weight |
+| Feature | Impact |
 |---------|--------|
-| Heavy Bleeding | 4 |
-| Low Hemoglobin | 4 |
-| Pregnancy Issue | 5 |
-| Dizziness | 3 |
-| Fatigue | 2 |
-| Irregular Cycles | 2 |
-| Pain/Cramps | 2 |
+| Hindi support | Rural accessibility |
+| Text-to-speech | Helps non-readers |
+| Offline prediction | Works without internet |
+| Privacy-first | Addresses cultural sensitivity |
+| Mood tracking | Mental health awareness |
 
-**Emergency Modifiers:**
-| Sign | Modifier |
-|------|----------|
-| Fainted | +2 |
-| Severe Pain | +2 |
-| Vomiting | +2 |
+## 📝 License
 
-**Risk Levels:**
-| Score | Level | Action |
-|-------|-------|--------|
-| 0–3 | LOW ✅ | Maintain healthy lifestyle |
-| 4–6 | MODERATE ⚠️ | Visit health center in 2-3 days |
-| 7+ | HIGH 🚨 | Immediate medical attention + SMS alert |
-
----
-
-## License
-
-MIT — Built with ❤️ for rural women's health.
+Built with ❤️ for CodeSangram Hackathon
 
 ## ⚠️ Disclaimer
 
