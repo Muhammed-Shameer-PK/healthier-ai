@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { saveLanguage, getLanguage } from '../utils/storage';
+import { translations } from '../constants/translations';
 
 export const LanguageContext = createContext();
 
@@ -26,8 +27,10 @@ export function LanguageProvider({ children }) {
     await saveLanguage(lang);
   };
 
+  const t = translations[language] || translations['en'];
+
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, changeLanguage }}>
+    <LanguageContext.Provider value={{ language, toggleLanguage, changeLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -13,6 +13,7 @@ export const translations = {
     home: 'Home',
     aiAdvocate: 'AI Health Advocate',
     settings: 'Settings',
+    calendar: 'Cycle Calendar',
     
     // Calendar
     whatToLog: 'What would you like to log?',
@@ -133,6 +134,7 @@ export const translations = {
     home: 'होम',
     aiAdvocate: 'AI स्वास्थ्य सहायक',
     settings: 'सेटिंग्स',
+    calendar: 'चक्र कैलेंडर',
     
     // Calendar
     whatToLog: 'आप क्या लॉग करना चाहेंगी?',
