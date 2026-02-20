@@ -1,17 +1,34 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Languages } from 'lucide-react-native';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function LanguageSwitch({ style }) {
+export default function LanguageSwitch() {
   const { language, toggleLanguage } = useLanguage();
+
   return (
-    <TouchableOpacity style={[styles.btn, style]} onPress={toggleLanguage}>
-      <Text style={styles.text}>{language === 'en' ? 'हिंदी' : 'EN'}</Text>
+    <TouchableOpacity style={styles.container} onPress={toggleLanguage}>
+      <Languages size={20} color="#FFB6C1" />
+      <Text style={styles.text}>
+        {language === 'en' ? 'EN' : 'HI'}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  btn:  { backgroundColor: '#FFE4E9', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-end' },
-  text: { color: '#C2185B', fontWeight: '700', fontSize: 14 },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE4E9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
 });
