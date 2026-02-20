@@ -17,51 +17,11 @@ export default function TabLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Home color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color, size }) => (
-            <Calendar color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="risk"
-        options={{
-          title: 'Health',
-          tabBarIcon: ({ color, size }) => (
-            <Activity color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          title: 'AI Chat',
-          tabBarIcon: ({ color, size }) => (
-            <MessageCircle color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Settings color={color} size={size} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index"    options={{ title: 'Home',     tabBarIcon: ({ color, size }) => <Home            color={color} size={size} /> }} />
+      <Tabs.Screen name="calendar" options={{ title: 'Calendar', tabBarIcon: ({ color, size }) => <Calendar        color={color} size={size} /> }} />
+      <Tabs.Screen name="risk"     options={{ title: 'Health',   tabBarIcon: ({ color, size }) => <Activity        color={color} size={size} /> }} />
+      <Tabs.Screen name="chat"     options={{ title: 'AI Chat',  tabBarIcon: ({ color, size }) => <MessageCircle   color={color} size={size} /> }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color, size }) => <Settings        color={color} size={size} /> }} />
     </Tabs>
   );
 }

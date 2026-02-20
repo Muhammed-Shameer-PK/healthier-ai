@@ -1,48 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import CycleCalendar from '../../src/components/Calendar';
-import CyclePrediction from '../../src/components/CyclePrediction';
-import MoodHeatmap from '../../src/components/MoodHeatmap';
-import { useLanguage } from '../../src/context/LanguageContext';
-import { translations } from '../../src/constants/translations';
+import { View, Text, StyleSheet } from 'react-native';
 
 export default function CalendarScreen() {
-  const { language } = useLanguage();
-  const t = translations[language];
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            {language === 'hi' ? 'कैलेंडर' : 'Calendar'}
-          </Text>
-        </View>
-        
-        <CycleCalendar />
-        
-        <CyclePrediction />
-        
-        <MoodHeatmap />
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.icon}>📅</Text>
+      <Text style={styles.title}>Cycle Calendar</Text>
+      <Text style={styles.text}>
+        Period tracking calendar coming in a future sprint.
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF5F5',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF5F5', padding: 24 },
+  icon:  { fontSize: 48, marginBottom: 12 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#C2185B', marginBottom: 12 },
+  text:  { fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 22 },
 });
