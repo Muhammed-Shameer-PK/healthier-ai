@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const noop = () => Alert.alert('Coming Soon', 'This feature will be added in the next sprint.');
 
@@ -14,6 +15,7 @@ const MOCK_LOGS = [
 ];
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [hindi, setHindi]     = useState(false);
   const [notifs, setNotifs]   = useState(true);
 
@@ -84,6 +86,17 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Role Switching */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Switch Mode</Text>
+        <TouchableOpacity style={styles.roleBtn} onPress={() => router.push('/asha')} activeOpacity={0.8}>
+          <Text style={styles.roleBtnTxt}>🏥  Switch to ASHA Worker Mode</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.roleBtn, styles.roleBtnSecondary]} onPress={() => router.replace('/role-select')} activeOpacity={0.8}>
+          <Text style={styles.roleBtnSecondaryTxt}>🔁  Change Role / Language</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Danger Zone */}
       <TouchableOpacity style={styles.dangerBtn} onPress={noop}>
         <Text style={styles.dangerBtnTxt}>🗑️  Clear All Data</Text>
@@ -112,6 +125,10 @@ const styles = StyleSheet.create({
   syncSub:      { fontSize: 12, color: '#aaa', lineHeight: 18, marginBottom: 10 },
   syncBtn:      { backgroundColor: '#FFE4E9', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
   syncBtnTxt:   { color: '#C2185B', fontWeight: '600', fontSize: 13 },
+  roleBtn:          { backgroundColor: '#E3F2FD', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 8 },
+  roleBtnTxt:       { color: '#01579B', fontSize: 15, fontWeight: '700' },
+  roleBtnSecondary: { backgroundColor: '#FFE4E9' },
+  roleBtnSecondaryTxt: { color: '#C2185B', fontSize: 15, fontWeight: '700' },
   dangerBtn:    { backgroundColor: '#fff0f0', borderRadius: 12, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ffcccc' },
   dangerBtnTxt: { color: '#e53e3e', fontSize: 16, fontWeight: '600' },
 });
