@@ -63,6 +63,7 @@ if ! git diff --quiet || ! git diff --staged --quiet; then
 fi
 
 git checkout demo/mvp-final
+git clean -fd app/ src/ 2>/dev/null || true
 echo -e "${GREEN}  ✓ On branch: $(git branch --show-current)${NC}"
 echo ""
 
