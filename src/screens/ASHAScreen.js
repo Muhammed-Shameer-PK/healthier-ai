@@ -26,7 +26,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LanguageContext } from '../context/LanguageContext';
 import {
@@ -93,6 +93,7 @@ const t = {
 
 export default function ASHAScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { language } = useContext(LanguageContext);
   const lang = language === 'hi' ? 'hi' : 'en';
   const texts = t[lang];
@@ -196,7 +197,7 @@ export default function ASHAScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={[styles.safe, { paddingTop: insets.top }]}>
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={
@@ -325,7 +326,7 @@ export default function ASHAScreen() {
           <Text style={styles.switchBtnText}>{texts.switchRole}</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

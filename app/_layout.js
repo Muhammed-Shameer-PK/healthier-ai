@@ -15,6 +15,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from '../src/context/LanguageContext';
 import { startAutoSync, stopAutoSync } from '../src/services/syncService';
 import { getRole } from '../src/services/storageService';
@@ -69,8 +70,9 @@ export default function RootLayout() {
         router.replace('/role-select');
       }
     } else if (userRole === ROLES.ASHA) {
-      // ASHA worker should always be on /asha
-      if (currentScreen !== 'asha' && currentScreen !== 'role-select') {
+      // ASHA worker home is /asha, but allow assessment flow screens too
+      const ashaAllowed = ['asha', 'role-select', 'symptoms', 'result'];
+      if (!ashaAllowed.includes(currentScreen)) {
         router.replace('/asha');
       }
     }
@@ -93,54 +95,56 @@ export default function RootLayout() {
   }
 
   return (
-    <LanguageProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#FFF5F5',
-          },
-          headerTintColor: '#333',
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-          contentStyle: {
-            backgroundColor: '#FFF5F5',
-          },
-        }}
-      >
-        {/* Role selection (entry point for new users) */}
-        <Stack.Screen
-          name="role-select"
-          options={{ title: 'Select Role', headerShown: false }}
-        />
-        {/* Main tabs */}
-        <Stack.Screen
-          name="(tabs)"
-          options={{ headerShown: false }}
-        />
-        {/* Symptom entry form */}
-        <Stack.Screen
-          name="symptoms"
-          options={{ title: 'Health Assessment' }}
-        />
-        {/* Assessment result */}
-        <Stack.Screen
-          name="result"
-          options={{ title: 'Result', headerBackVisible: false }}
-        />
-        {/* Woman profile setup (onboarding) */}
-        <Stack.Screen
-          name="profile-setup"
-          options={{ title: 'Profile Setup', headerShown: false }}
-        />
-        {/* ASHA worker dashboard */}
-        <Stack.Screen
-          name="asha"
-          options={{ title: 'ASHA Dashboard', headerShown: false }}
-        />
-      </Stack>
-    </LanguageProvider>
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: '#FFF5F5',
+            },
+            headerTintColor: '#333',
+            headerTitleStyle: {
+              fontWeight: '600',
+            },
+            contentStyle: {
+              backgroundColor: '#FFF5F5',
+            },
+          }}
+        >
+          {/* Role selection (entry point for new users) */}
+          <Stack.Screen
+            name="role-select"
+            options={{ title: 'Select Role', headerShown: false }}
+          />
+          {/* Main tabs */}
+          <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false }}
+          />
+          {/* Symptom entry form */}
+          <Stack.Screen
+            name="symptoms"
+            options={{ title: 'Health Assessment' }}
+          />
+          {/* Assessment result */}
+          <Stack.Screen
+            name="result"
+            options={{ title: 'Result', headerBackVisible: false }}
+          />
+          {/* Woman profile setup (onboarding) */}
+          <Stack.Screen
+            name="profile-setup"
+            options={{ title: 'Profile Setup', headerShown: false }}
+          />
+          {/* ASHA worker dashboard */}
+          <Stack.Screen
+            name="asha"
+            options={{ title: 'ASHA Dashboard', headerShown: false }}
+          />
+        </Stack>
+      </LanguageProvider>
+    </SafeAreaProvider>
   );
 }
 
