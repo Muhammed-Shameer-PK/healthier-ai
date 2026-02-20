@@ -1,120 +1,212 @@
-# Healthier 
+Here is a **GitHub-ready, production-quality README** with badges, clean structure, and professional formatting:
 
-A privacy-first, vernacular-supported menstrual wellness tracker built for the **CodeSangram Hackathon**.
+---
 
-## ✨ Features
+# 🌸 Healthier
 
-### 1. 📅 Cycle Tracker
-- Visual calendar using `react-native-calendars`
-- Log period days and moods
-- Offline cycle prediction algorithm
+![React Native](https://img.shields.io/badge/React%20Native-0.73+-blue.svg)
+![Expo](https://img.shields.io/badge/Expo-SDK%2050+-black.svg)
+![Gemini API](https://img.shields.io/badge/AI-Gemini%20API-purple.svg)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green.svg)
+![Privacy First](https://img.shields.io/badge/Privacy-Local%20Storage-success.svg)
+![License](https://img.shields.io/badge/License-Hackathon-blue.svg)
 
-### 2. 🤖 AI Health Advocate
-- Chat interface powered by Gemini API
-- Personalized health advice in your language
-- Text-to-speech for accessibility (especially for rural users)
+> **A Privacy-First, Vernacular-Enabled Menstrual Wellness Platform**
+> Built for the **CodeSangram Hackathon**
 
-### 3. 🗣️ Vernacular Support
-- **English** and **Hindi** (हिंदी)
-- Easy language toggle
-- All UI elements translated
+---
 
-### 4. 🔒 Privacy First
-- All data stored locally using `expo-secure-store`
-- No cloud uploads or tracking
-- Secure encryption on device
+## 📖 Overview
 
-### 5. 📊 Mood Heatmap
-- Visual mood tracking over time
-- See patterns in your emotional wellbeing
+**Healthier** is a secure, accessible menstrual wellness tracker designed for rural and semi-urban women.
 
-## 🛠️ Tech Stack
+The app combines:
 
-- **React Native** (Expo Go)
-- **Expo Router** for navigation
-- **Lucide Icons** for beautiful UI
-- **Gemini API** for AI health insights
-- **expo-secure-store** for local data storage
-- **expo-speech** for text-to-speech
-- **react-native-calendars** for cycle tracking
+* 📅 Smart cycle tracking
+* 🤖 AI-powered health guidance
+* 🌏 Vernacular language support
+* 🔐 Fully local encrypted storage
+
+All user data remains on the device — ensuring privacy, dignity, and cultural sensitivity.
+
+---
+
+## ✨ Key Features
+
+### 📅 Cycle Tracking & Prediction
+
+* Interactive calendar (`react-native-calendars`)
+* Period & mood logging
+* Offline cycle prediction algorithm
+* Historical pattern tracking
+
+### 🤖 AI Health Advocate
+
+* Gemini API powered chat assistant
+* Personalized menstrual health guidance
+* Multilingual responses
+* Integrated text-to-speech for accessibility
+
+### 🌏 Vernacular Support
+
+* English
+* Hindi (हिंदी)
+* One-tap language toggle
+* Fully translated UI
+
+### 🔒 Privacy-First Architecture
+
+* Local encrypted storage using `expo-secure-store`
+* No cloud uploads
+* No tracking
+* No analytics
+
+### 📊 Mood Heatmap
+
+* Visual mood tracking
+* Emotional pattern recognition
+* Mental health awareness insights
+
+---
+
+## 🛠 Tech Stack
+
+| Layer         | Technology             |
+| ------------- | ---------------------- |
+| Framework     | React Native (Expo)    |
+| Navigation    | Expo Router            |
+| AI            | Gemini API             |
+| Storage       | expo-secure-store      |
+| Accessibility | expo-speech            |
+| UI            | Lucide Icons           |
+| Calendar      | react-native-calendars |
+
+---
+
+## 🏗 Project Structure
+
+```
+├── app/
+│   ├── _layout.js
+│   └── (tabs)/
+│       ├── index.js
+│       ├── chat.js
+│       └── settings.js
+├── src/
+│   ├── api/
+│   │   └── gemini.js
+│   ├── components/
+│   ├── context/
+│   ├── hooks/
+│   ├── constants/
+│   └── utils/
+└── assets/
+```
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
-- Node.js (v18 or higher)
-- Expo Go app on your phone
-- Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+### 🔹 Prerequisites
 
-### Installation
+* Node.js (v18+)
+* Expo Go (Android / iOS)
+* Gemini API key from Google AI Studio
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+---
 
-2. **Add your Gemini API key:**
-   Open `src/api/gemini.js` and replace:
-   ```javascript
-   const API_KEY = 'YOUR_GEMINI_API_KEY';
-   ```
+### 🔹 Installation
 
-3. **Start the development server:**
-   ```bash
-   npx expo start
-   ```
+1️⃣ Clone the repository:
 
-4. **Run on your device:**
-   - Scan the QR code with Expo Go (Android)
-   - Scan with Camera app (iOS)
-
-## 📁 Project Structure
-
-```
-├── app/                      # Expo Router pages
-│   ├── _layout.js           # Root layout with providers
-│   └── (tabs)/              # Tab-based navigation
-│       ├── index.js         # Home screen with calendar
-│       ├── chat.js          # AI health advocate
-│       └── settings.js      # App settings
-├── src/
-│   ├── api/
-│   │   └── gemini.js        # Gemini API integration
-│   ├── components/
-│   │   ├── Calendar.js      # Period tracking calendar
-│   │   ├── LanguageSwitch.js # EN/ML toggle
-│   │   ├── CyclePrediction.js # Next period prediction
-│   │   └── MoodHeatmap.js   # Mood visualization
-│   ├── context/
-│   │   └── LanguageContext.js # Language state management
-│   ├── hooks/
-│   │   └── useCycleTracker.js # Cycle prediction logic
-│   ├── constants/
-│   │   └── translations.js  # EN/ML translations
-│   └── utils/
-│       └── storage.js       # Secure storage utilities
-└── assets/                  # App icons and images
+```bash
+git clone https://github.com/your-username/healthier.git
+cd healthier
 ```
 
-## 🎨 Design
+2️⃣ Install dependencies:
 
-- **Primary Colors:** `#FFF5F5` (background), `#FFB6C1` (accent)
-- **Style:** Soft pastel, minimalist, accessible
-- **Target Users:** Rural women with varying tech literacy
+```bash
+npm install
+```
 
-## 🏆 Hackathon Features
+3️⃣ Add your Gemini API key:
 
-| Feature | Impact |
-|---------|--------|
-| Hindi support | Rural accessibility |
-| Text-to-speech | Helps non-readers |
-| Offline prediction | Works without internet |
-| Privacy-first | Addresses cultural sensitivity |
-| Mood tracking | Mental health awareness |
+Open:
 
-## 📝 License
+```
+src/api/gemini.js
+```
 
-Built with ❤️ for CodeSangram Hackathon
+Replace:
+
+```javascript
+const API_KEY = 'YOUR_GEMINI_API_KEY';
+```
+
+4️⃣ Start development server:
+
+```bash
+npx expo start
+```
+
+5️⃣ Run on your device:
+
+* Scan QR code with Expo Go (Android)
+* Scan using Camera app (iOS)
+
+---
+
+## 🎨 Design Philosophy
+
+* Soft pastel theme (`#FFF5F5`, `#FFB6C1`)
+* Minimalist interface
+* Low cognitive load
+* Optimized for low digital literacy users
+* Accessibility-first design
+
+---
+
+## 🎯 Impact Goals
+
+| Challenge               | Healthier Solution          |
+| ----------------------- | --------------------------- |
+| Language barriers       | Hindi localization          |
+| Limited literacy        | Text-to-speech support      |
+| Cultural sensitivity    | Offline-first privacy model |
+| Poor connectivity       | Offline cycle prediction    |
+| Mental health awareness | Mood heatmap tracking       |
+
+---
+
+## 🔐 Privacy & Security
+
+* All data stored locally
+* Encrypted storage via `expo-secure-store`
+* No external databases
+* No third-party analytics
+* No personal data transmission
+
+---
 
 ## ⚠️ Disclaimer
 
-This app provides general wellness information and is not a substitute for professional medical advice. Always consult a healthcare provider for medical concerns.
+Healthier provides general wellness tracking and educational insights.
+It is not a substitute for professional medical advice.
+Users should consult certified healthcare providers for medical concerns.
+
+---
+
+## 🏆 Hackathon Submission
+
+Developed for **CodeSangram Hackathon**
+Focused on accessibility, privacy, and grassroots health empowerment.
+
+---
+
+## 📄 License
+
+This project was developed for hackathon purposes.
+For production or commercial use, please contact the development team.
+
+---
