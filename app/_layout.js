@@ -1,21 +1,15 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 
 export default function RootLayout() {
   return (
-    <>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: '#FFF5F5' },
-          headerTintColor: '#333',
-          headerTitleStyle: { fontWeight: '600' },
-          contentStyle: { backgroundColor: '#FFF5F5' },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-    </>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="role-select" />
+      <Stack.Screen name="profile-setup" />
+      <Stack.Screen name="symptoms" />
+      <Stack.Screen name="result" />
+      <Stack.Screen name="asha" />
+    </Stack>
   );
 }
