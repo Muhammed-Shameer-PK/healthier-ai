@@ -29,6 +29,7 @@ require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
+const dns = require('dns');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -38,6 +39,20 @@ const healthRoutes = require('./routes/healthRoutes');
 // ── Configuration ──────────────────────────────
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DNS_SERVERS = process.env.MONGODB_DNS_SERVERS || '8.8.8.8,1.1.1.1';
+
+// Fix SRV lookup failures on networks/ISPs that block local DNS SRV queries
+if (MONGODB_URI?.startsWith('mongodb+srv://')) {
+  const dnsServers = MONGODB_DNS_SERVERS
+    .split(',')
+    .map((server) => server.trim())
+    .filter(Boolean);
+
+  if (dnsServers.length > 0) {
+    dns.setServers(dnsServers);
+    console.log(`[Backend] Using custom DNS for MongoDB SRV: ${dnsServers.join(', ')}`);
+  }
+}
 
 if (!MONGODB_URI) {
   console.error('ERROR: MONGODB_URI is not set in .env');
@@ -125,6 +140,10 @@ mongoose
   })
   .catch((error) => {
     console.error('MongoDB connection failed:', error.message);
+    if (String(error.message || '').includes('querySrv ECONNREFUSED')) {
+      console.error('[Backend] SRV DNS lookup is being blocked by your current DNS resolver.');
+      console.error('[Backend] Use MONGODB_DNS_SERVERS=8.8.8.8,1.1.1.1 in backend/.env or switch to a non-SRV MongoDB URI.');
+    }
     process.exit(1);
   });
 

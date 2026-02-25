@@ -6,9 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "extra": {
-      "backendUrl": "http://10.1.161.140:3000/api"
-    },
+    "extra": {},
     "splash": {
       "backgroundColor": "#FFF5F5"
     },
